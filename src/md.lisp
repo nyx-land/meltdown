@@ -66,7 +66,10 @@ At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praese
 
 (defmethod parse ((input section) &key doc)
   (with-slots (paragraphs parent) input
-    (setf parent (doc-raw-pos doc))
+    (if (doc-raw-pos doc)
+        (progn
+          (setf parent (doc-raw-pos doc))
+          (push (sections parent) input)))
     (setf paragraphs (split-paragraphs
               (collect-paragraphs (doc-raw-raw doc))))
     (parse doc)))
