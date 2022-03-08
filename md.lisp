@@ -43,14 +43,11 @@ At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praese
     :initform nil
     :accessor paragraphs)))
 
-(defparameter *char-lookup*
-  (vy:dict
-   #\# '(make-instance (quote heading))
-   t '(make-instance (quote section))))
-
 (defun getchar (c)
-  (gethash c *char-lookup*
-           (gethash t *char-lookup*)))
+  (flet ((lc (cx) (equalp c cx))
+         (ret (obj) `(make-instance (quote ,obj))))
+    (cond ((lc #\#) (ret 'heading))
+          (t (ret 'section)))))
 
 (defun make-obj (c &key (eval? t))
   (let ((obj (getchar c)))
