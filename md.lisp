@@ -69,8 +69,8 @@ At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praese
 (defun collect-paragraphs (in-stream)
   (loop for x = (read-char in-stream nil)
         until (eql x #\#)
-        collect x into text
-        finally (concatenate 'string text)))
+        collect (princ x) into text
+        finally (return (concatenate 'string text))))
 
 (defun split-paragraphs (text)
   (remove-if (lambda (x) (equalp "" x))
