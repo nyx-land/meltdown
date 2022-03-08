@@ -71,14 +71,16 @@ At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praese
 (defmethod parse ((input heading) &key doc)
   (with-slots (title parent depth) input
     (if (doc-raw-pos doc)
-        (heading-handler input depth (doc-raw-pos doc)))
+        (heading-handler input depth (doc-raw-pos doc))
+        (setf (doc-raw-pos doc) input))
     (setf title (cleanup-title
                  (read-line (doc-raw-raw doc))))
+    (push input (doc-raw-nodes doc))
     (parse doc)))
 
 (defmethod parse ((input doc-raw) &key doc)
   (declare (ignore doc))
-  (parse (make-obj (read-char (doc-raw-raw input))
+  (parse (make-obj (eof-handler input)
                    :in-stream (doc-raw-raw input)
                    :parent (doc-raw-pos input))
          :doc input))
