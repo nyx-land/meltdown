@@ -17,9 +17,25 @@ At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praese
 ;;    :initarg :char
 ;;    :accessor char)))
 
+(defstruct doc-raw
+  nodes pos raw)
+
+(defclass doc ()
+  ((nodes
+    :initarg :nodes
+    :initform nil
+    :accessor nodes)
+   (pos
+    :initarg :pos
+    :accessor pos)
+   (raw
+    :initarg :raw
+    :accessor raw)))
+
 (defclass node ()
   ((parent
     :initarg :parent
+    :initform nil
     :accessor parent)
    (children
     :initarg :children
