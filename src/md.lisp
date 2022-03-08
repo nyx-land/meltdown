@@ -61,28 +61,42 @@ At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praese
     :initform nil
     :accessor paragraphs)))
 
-(defgeneric parse (input &key in-stream prev-node)
+(defgeneric parse (input &key doc)
   (:documentation "Parser for markdown"))
 
-(defmethod parse ((input section) &key in-stream prev-node)
+(defmethod parse ((input section) &key doc)
   (with-slots (paragraphs parent) input
-    (setf parent prev-node)
+    (setf parent (doc-raw-pos doc))
     (setf paragraphs (split-paragraphs
-              (collect-paragraphs in-stream)))
-    (parse in-stream)))
+              (collect-paragraphs (doc-raw-raw doc))))
+    (parse doc)))
 
-(defmethod parse ((input heading) &key in-stream prev-node)
-  (let ((next-char (peek-char nil in-stream)))
-    (with-slots (depth title) input
-      (if (eql next-char #\#)
-          (parse (car (add-subheading input))
-                 :in-stream in-stream)
-          (progn
-            (setf title (cleanup-title
-                         (read-line in-stream)))
-            (parse (make-obj next-char)
-                   :in-stream in-stream
-                   :prev-node input))))))
+(defmethod parse ((input heading) &key doc)
+  (with-slots (title parent depth) input
+    (if (doc-raw-pos doc)
+        (heading-handler input depth (doc-raw-pos doc)))
+    (setf title (cleanup-title
+                 (read-line (doc-raw-raw doc))))
+    (parse doc)))
 
-(defmethod parse ((input stream) &key in-stream prev-node)
-  (parse (make-obj (read-char input)) :in-stream input))
+(defmethod parse ((input doc-raw) &key doc)
+  (declare (ignore doc))
+  (parse (make-obj (read-char (doc-raw-raw input))
+                   :in-stream (doc-raw-raw input)
+                   :parent (doc-raw-pos input))
+         :doc input))
+
+(defmethod parse ((input stream) &key doc)
+  (declare (ignore doc))
+  (parse (make-doc-raw :raw input)))
+
+(defmethod parse ((input pathname) &key doc)
+  (declare (ignore doc))
+  (with-open-file (f input)
+    (parse f)))
+
+;;  (parse (make-obj (read-char input)
+;;                   :in-stream input
+;;                   :parent prev-node)
+;;         :in-stream input
+;;         :prev-node prev-node))
