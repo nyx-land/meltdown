@@ -8,9 +8,12 @@ CLOS objects for you to do whatever you wish with. It is also written in
 portable common lisp* (i.e. has no external dependencies).
 
 Meltdown trades the convenience of other systems that convert markdown to HTML
-by making it possible to treat markdown documents as rich CLOS objects and spare
-you, the user, of the pain of having to parse a bunch of raw text for whatever
-cool new project you're working on.
+for maximum flexibility by making it possible to treat markdown documents as
+rich CLOS objects and spare you, the user, of the pain of having to parse a
+bunch of raw text for whatever cool new project you're working on.
+
+This doesn't use any fancy parsing algorithms; it's basically just a
+cargo-culted recursive descent parser.
 
 ---
 * TODO: Replace UIOP stuff 
