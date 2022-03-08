@@ -6,7 +6,8 @@
 
 (defun collect-paragraphs (in-stream)
   (loop for x = (read-char in-stream nil)
-        until (eql x #\#)
+        until (or (eql x #\#)
+                  (null x))
         collect (princ x) into text
         finally (return (concatenate 'string text))))
 
@@ -43,4 +44,11 @@
          (ret (obj) `(make-instance (quote ,obj))))
     (cond ((lc #\#) (make-heading in-stream
                                   :parent parent))
-          (t (ret 'section)))))
+          (:eof (eval (ret 'doc)))
+          (t (eval (ret 'section))))))
+
+(defun eof-handler (doc)
+  (let ((final-doc (make-instance
+                    'doc
+                    :nodes (doc-raw-nodes doc))))
+    (read-char (doc-raw-raw doc) nil final-doc)))
