@@ -24,13 +24,7 @@ At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praese
   ((nodes
     :initarg :nodes
     :initform nil
-    :accessor nodes)
-   (pos
-    :initarg :pos
-    :accessor pos)
-   (raw
-    :initarg :raw
-    :accessor raw)))
+    :accessor nodes)))
 
 (defclass node ()
   ((parent
