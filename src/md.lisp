@@ -94,8 +94,7 @@ At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praese
   (with-open-file (f input)
     (parse f)))
 
-;;  (parse (make-obj (read-char input)
-;;                   :in-stream input
-;;                   :parent prev-node)
-;;         :in-stream input
-;;         :prev-node prev-node))
+(defmethod parse ((input doc) &key doc)
+  (setf (nodes input)
+        (doc-raw-nodes doc))
+  input)
