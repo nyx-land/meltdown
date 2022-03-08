@@ -1,3 +1,5 @@
+(in-package :meltdown)
+
 (defparameter *parse-test*
   (make-string-input-stream
 "# heading
@@ -43,54 +45,19 @@ At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praese
     :initform nil
     :accessor paragraphs)))
 
-(defun getchar (c)
-  (flet ((lc (cx) (equalp c cx))
-         (ret (obj) `(make-instance (quote ,obj))))
-    (cond ((lc #\#) (ret 'heading))
-          (t (ret 'section)))))
-
-(defun make-obj (c &key (eval? t))
-  (let ((obj (getchar c)))
-    (if eval?
-        (eval obj)
-        obj)))
-
-(defun cleanup-title (s)
-  (remove #\Space
-          (remove #\# s)))
-
-(defun add-subheading (parent)
-  (push (eval (append
-               (make-obj #\# :eval? nil)
-               `(:depth ,(+ 1 (depth parent))
-                 :parent ,parent)))
-        (children parent)))
-
-(defun collect-paragraphs (in-stream)
-  (loop for x = (read-char in-stream nil)
-        until (eql x #\#)
-        collect (princ x) into text
-        finally (return (concatenate 'string text))))
-
-(defun split-paragraphs (text)
-  (remove-if (lambda (x) (equalp "" x))
-             (uiop:split-string text
-                                :separator (format nil "~%"))))
-
-(defgeneric parse (input &key &allow-other-keys)
+(defgeneric parse (input &key in-stream prev-node)
   (:documentation "Parser for markdown"))
 
-(defmethod parse ((input section) &key in-stream
-                                    prev-node)
-  (with-accessors (paragraphs parent) input
+(defmethod parse ((input section) &key in-stream prev-node)
+  (with-slots (paragraphs parent) input
     (setf parent prev-node)
     (setf paragraphs (split-paragraphs
-                      (collect-paragraphs in-stream)))
+              (collect-paragraphs in-stream)))
     (parse in-stream)))
 
-(defmethod parse ((input heading) &key in-stream)
-  (let ((next-char (peek-char nil input)))
-    (with-accessors (depth title) input
+(defmethod parse ((input heading) &key in-stream prev-node)
+  (let ((next-char (peek-char nil in-stream)))
+    (with-slots (depth title) input
       (if (eql next-char #\#)
           (parse (car (add-subheading input))
                  :in-stream in-stream)
@@ -101,6 +68,5 @@ At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praese
                    :in-stream in-stream
                    :prev-node input))))))
 
-(defmethod parse ((input stream))
-  (let ((next-char (peek-char nil input)))
-    (parse (make-obj next-char) :in-stream input)))
+(defmethod parse ((input stream) &key in-stream prev-node)
+  (parse (make-obj (read-char input)) :in-stream input))
