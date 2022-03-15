@@ -90,34 +90,31 @@ a file or string."))
 
 (defmethod parse ((input section) &key doc)
   (with-slots (paragraphs parent) input
-    (if (doc-raw-pos doc)
+    (if (pos doc)
         (progn
-          (setf parent (doc-raw-pos doc))
+          (setf parent (pos doc))
           (push (sections parent) input)))
     (setf paragraphs (split-paragraphs
-              (collect-paragraphs (doc-raw-raw doc))))
+              (collect-paragraphs (raw doc))))
     (parse doc)))
 
 (defmethod parse ((input heading) &key doc)
   (with-slots (title parent depth) input
-    (if (doc-raw-pos doc)
-        (heading-handler input depth (doc-raw-pos doc))
-        (setf (doc-raw-pos doc) input))
     (setf title (cleanup-title
-                 (read-line (doc-raw-raw doc))))
-    (push input (doc-raw-nodes doc))
+                 (read-line (raw doc) nil)))
+    (setf (nodes doc)
+          (push input (nodes doc)))
     (parse doc)))
 
 (defmethod parse ((input doc-raw) &key doc)
   (declare (ignore doc))
-  (parse (make-obj (eof-handler input)
-                   :in-stream (doc-raw-raw input)
-                   :parent (doc-raw-pos input))
+  (parse (make-obj (peek-char nil (raw input) nil)
+                   input)
          :doc input))
 
 (defmethod parse ((input stream) &key doc)
   (declare (ignore doc))
-  (parse (make-doc-raw :raw input)))
+  (parse (make-instance 'doc-raw :raw input)))
 
 (defmethod parse ((input string) &key doc)
   (declare (ignore doc))
@@ -131,5 +128,5 @@ a file or string."))
 
 (defmethod parse ((input doc) &key doc)
   (setf (nodes input)
-        (doc-raw-nodes doc))
+        (nodes doc))
   input)
