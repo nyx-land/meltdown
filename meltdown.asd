@@ -1,6 +1,7 @@
 (defsystem "meltdown"
   :author "Nyx <n1x@riseup.net"
   :description "A markdown parser in portable common lisp"
+  :license "ISC"
   :components ((:module "src"
                 :components
                 ((:file "package")
