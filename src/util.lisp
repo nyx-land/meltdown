@@ -23,49 +23,43 @@
              (uiop:split-string text
                                 :separator (format nil "~%"))))
 
-(defun ret-node (depth parent)
-  "If the heading has a parent, return that along with its depth."
-  (let ((ret `(:depth ,depth)))
-    (if parent (append ret `(:parent ,parent))
-        ret)))
-
-(defun make-heading-param (in-stream &key (parent nil))
-  "Determine the heading's depth and whether or not it has a parent."
-  (loop for c = (read-char in-stream nil)
-        for d = 1 then (incf d)
+(defun make-heading-param (doc)
+  "Determine the heading's depth."
+  (loop for c = (read-char (raw doc) nil)
+        for d = 0 then (incf d)
         when (not (eql c #\#))
-          return (ret-node d parent)))
+          return `(:depth ,d)))
 
-(defun make-heading (in-stream &key (parent nil))
+(defun make-heading (doc)
   "A special object constructor to handle making a heading. Appends
 the unevaluated parameters to the constructor before making the object."
   (eval (append
          '(make-instance (quote heading))
-         (make-heading-param in-stream :parent parent))))
+         (make-heading-param doc))))
 
-(defun heading-handler (in-node depth pos)
+(defun heading-handler (in-node doc)
   "A handler when a heading is received to figure out where the
 heading belongs within the document's hierarchy."
-  (cond ((< depth (depth pos))
-         (setf (parent in-node) pos))
-        ((= depth (depth pos))
-         (if (parent pos)
-             (setf (parent in-node) (parent pos))))))
+  (cond ((null (pos doc))
+         (progn
+           (setf (pos doc) in-node)
+           (setf (parent in-node) (final doc))))
+        ((< (depth in-node) (depth (pos doc)))
+         (setf (parent in-node) (pos doc)))
+        ((= (depth in-node) (depth (pos doc)))
+         (setf (parent in-node) (parent (pos doc)))))
+  in-node)
 
-(defun make-obj (c &key in-stream (parent nil))
+(defun make-obj (c doc) ;; &key (parent nil))
   "Make an object that corresponds to a node in the markdown
 document based off the character that is received by the parser
 method. Return the doc if it reaches the end of the stream and
 by default assume a character belongs to a paragraph."
   (flet ((lc (cx) (equalp c cx))
          (ret (obj) `(make-instance (quote ,obj))))
-    (cond ((lc #\#) (make-heading in-stream
-                                  :parent parent))
-          (:eof (eval (ret 'doc)))
+    (cond ((lc #\#) (heading-handler
+                     (make-heading doc)
+                     doc))
+          (:eof (final doc))
           (t (eval (ret 'section))))))
 
-(defun eof-handler (doc)
-  (let ((final-doc (make-instance
-                    'doc
-                    :nodes (doc-raw-nodes doc))))
-    (read-char (doc-raw-raw doc) nil final-doc)))
