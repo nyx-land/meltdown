@@ -48,19 +48,41 @@ hierachy of a document."))
    (depth
     :initarg :depth
     :initform 1
-    :accessor depth)
-   (sections
-    :initarg :sections
-    :initform nil
-    :accessor sections))
+    :accessor depth))
   (:documentation "A heading is a type of node that has a title
 associated with it and a depth."))
 
-(defclass section (node)
-  ((paragraphs
-    :initarg :paragraphs
+(defclass paragraph (section) ()
+  (:documentation "A placeholder class for a type of section."))
+
+(defclass markup (body)
+  ((meta
+    :initarg :meta
+    :accessor meta
+    :documentation "Describes how the text is being presented."))
+  (:documentation "A special bit of text that has more information associated
+with it than just the text itself, such as a presentation type or a link."))
+
+(defclass link (markup)
+  ((src
+    :initarg :src
+    :accessor src))
+  (:documentation "Points to some other text."))
+
+(defclass doc-raw (doc)
+  ((pos
+    :initarg :pos
     :initform nil
-    :accessor paragraphs)))
+    :accessor pos)
+   (raw
+    :initarg :raw
+    :accessor raw)
+   (final
+    :initarg :final
+    :initform (make-instance 'doc)
+    :accessor final))
+  (:documentation "A document begins its lifecycle as a raw document with some
+additional information to track the position within it for parsing."))
 
 (defgeneric parse (input &key doc)
   (:documentation "The main entrypoint for parsing markdown. Can take
