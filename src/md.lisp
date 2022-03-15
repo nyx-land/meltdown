@@ -56,7 +56,8 @@ At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praese
     :accessor paragraphs)))
 
 (defgeneric parse (input &key doc)
-  (:documentation "Parser for markdown"))
+  (:documentation "The main entrypoint for parsing markdown. Can take
+a file or string."))
 
 (defmethod parse ((input section) &key doc)
   (with-slots (paragraphs parent) input
@@ -88,6 +89,11 @@ At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praese
 (defmethod parse ((input stream) &key doc)
   (declare (ignore doc))
   (parse (make-doc-raw :raw input)))
+
+(defmethod parse ((input string) &key doc)
+  (declare (ignore doc))
+  (let ((in-stream (make-string-input-stream input)))
+    (parse in-stream)))
 
 (defmethod parse ((input pathname) &key doc)
   (declare (ignore doc))
