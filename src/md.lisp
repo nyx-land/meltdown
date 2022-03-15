@@ -102,8 +102,8 @@ a file or string."))
   (with-slots (title parent depth) input
     (setf title (cleanup-title
                  (read-line (raw doc) nil)))
-    (setf (nodes doc)
-          (push input (nodes doc)))
+    (check-toplevel input doc)
+    (setf (pos doc) input)
     (parse doc)))
 
 (defmethod parse ((input doc-raw) &key doc)

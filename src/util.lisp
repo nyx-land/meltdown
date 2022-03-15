@@ -50,6 +50,12 @@ heading belongs within the document's hierarchy."
          (setf (parent in-node) (parent (pos doc)))))
   in-node)
 
+(defun check-toplevel (in-node doc)
+  "Check if a heading should be in the toplevel doc nodes."
+  (if (= (depth in-node) 1)
+      (setf (nodes doc)
+            (push in-node (nodes doc)))))
+
 (defun make-obj (c doc) ;; &key (parent nil))
   "Make an object that corresponds to a node in the markdown
 document based off the character that is received by the parser
