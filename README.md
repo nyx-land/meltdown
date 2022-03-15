@@ -15,7 +15,7 @@ bunch of raw text for whatever cool new project you're working on.
 This doesn't use any fancy parsing algorithms; it's basically just a
 cargo-culted recursive descent parser.
 
-***disclaimer:** this doesn't work yet, don't use it
+**disclaimer:** this doesn't work yet, don't use it
 
 ---
 * TODO: Replace UIOP stuff 
