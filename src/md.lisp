@@ -13,25 +13,28 @@ Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium dolor
 At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praesentium voluptatum deleniti atque corrupti quos dolores et quas molestias excepturi sint occaecati cupiditate non provident, similique sunt in culpa qui officia deserunt mollitia animi, id est laborum et dolorum fuga. Et harum quidem rerum facilis est et expedita distinctio. Nam libero tempore, cum soluta nobis est eligendi optio cumque nihil impedit quo minus id quod maxime placeat facere possimus, omnis voluptas assumenda est, omnis dolor repellendus. Temporibus autem quibusdam et aut officiis debitis aut rerum necessitatibus saepe eveniet ut et voluptates repudiandae sint et molestiae non recusandae. Itaque earum rerum hic tenetur a sapiente delectus, ut aut reiciendis voluptatibus maiores alias consequatur aut perferendis doloribus asperiores repellat.")
   "A test markdown document. TODO: make proper tests for this")
 
-;; A document's lifecycle begins as a struct with some basic
-;; information to help the parser methods track the position
-;; within a document.
-(defstruct doc-raw
-  nodes pos raw)
+(defclass body ()
+  ((text
+    :initarg :text
+    :accessor text))
+  (:documentation "Some unstructured text."))
 
-(defclass doc ()
+(defclass section (body)
+  ((parent
+    :initarg :parent
+    :initform nil
+    :accessor parent))
+  (:documentation "The lowest point in the hierachy of a document."))
+
+(defclass doc (body)
   ((nodes
     :initarg :nodes
     :initform nil
     :accessor nodes))
   (:documentation "The whole markdown document."))
 
-(defclass node ()
-  ((parent
-    :initarg :parent
-    :initform nil
-    :accessor parent)
-   (children
+(defclass node (section)
+  ((children
     :initarg :children
     :initform nil
     :accessor children))
