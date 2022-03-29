@@ -23,36 +23,44 @@
              (uiop:split-string text
                                 :separator (format nil "~%"))))
 
-(defun make-heading-param (doc)
-  "Determine the heading's depth."
-  (loop for c = (read-char (raw doc) nil)
-        for d = 0 then (incf d)
-        when (not (eql c #\#))
-          return `(:depth ,d)))
-
 (defun make-heading (doc)
   "A special object constructor to handle making a heading. Appends
 the unevaluated parameters to the constructor before making the object."
-  (eval (append
-         '(make-instance (quote heading))
-         (make-heading-param doc))))
+  (loop for c = (read-char (raw doc) nil :eof)
+        for d = 0 then (incf d)
+        when (not (eql c #\#))
+          return (make-instance
+                  'heading
+                  :depth d)))
 
-(defun heading-handler (in-node doc)
+(defun set-relationship (p c)
+  (with-slots (parent) c
+    (with-slots (children) p
+      (setf parent p)
+      (setf children (push c children)))))
+
+(defun heading-handler (in-node prev doc)
   "A handler when a heading is received to figure out where the
 heading belongs within the document's hierarchy."
-  (cond ((null (pos doc))
-         (progn
-           (setf (pos doc) in-node)
-           (setf (parent in-node) (final doc))))
+  (cond ((null prev)
+         (set-parent (final doc) in-node))
+        ((equalp (type-of (parent prev))
+                 'doc)
+         (set-relationship prev in-node))
+        ((> (depth in-node) (depth prev))
+         (set-relationship prev in-node))
+        ((= (depth in-node) (depth prev))
+         (set-relationship (parent prev) in-node))
         ((< (depth in-node) (depth (pos doc)))
-         (setf (parent in-node) (pos doc)))
-        ((= (depth in-node) (depth (pos doc)))
-         (setf (parent in-node) (parent (pos doc)))))
+         (heading-handler in-node (parent prev) doc)))
   in-node)
 
+;; TODO: handle cases where all the highest nodes are
+;; the same level but not at 1
 (defun check-toplevel (in-node doc)
   "Check if a heading should be in the toplevel doc nodes."
-  (if (= (depth in-node) 1)
+  (if (or (= (depth in-node) 1)
+          (null (pos doc)))
       (setf (nodes doc)
             (push in-node (nodes doc)))))
 
