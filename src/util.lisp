@@ -63,9 +63,15 @@ method. Return the doc if it reaches the end of the stream and
 by default assume a character belongs to a paragraph."
   (flet ((lc (cx) (equalp c cx))
          (ret (obj) `(make-instance (quote ,obj))))
-    (cond ((lc #\#) (heading-handler
+    (cond ((eq c :eof)
+           (final doc))
+          ((lc #\#) (heading-handler
                      (make-heading doc)
+                     (pos doc) doc))
+          ((alpha-char-p c)
+           (make-instance 'section))
+          ((or (lc #\Newline)
+               (lc #\Return))
+           (make-obj (read-char nil nil :eof)
                      doc))
-          (:eof (final doc))
-          (t (eval (ret 'section))))))
-
+          )))
