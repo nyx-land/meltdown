@@ -11,9 +11,9 @@
 
 (defun collect-paragraphs (in-stream)
   "Collect the raw string for the paragraph(s) that belong to a heading."
-  (loop for x = (read-char in-stream nil)
-        until (or (eql x #\#)
-                  (null x))
+  (loop for x = (read-char in-stream nil :eof)
+        until (or (eq x #\#)
+                  (eq x :eof))
         collect (princ x) into text
         finally (return (concatenate 'string text))))
 
