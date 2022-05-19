@@ -126,15 +126,126 @@ additional information to track the position within it for parsing."))
   (:documentation "The main entrypoint for parsing markdown. Can take
 a file or string."))
 
-(defmethod parse ((input section) &key doc)
-  (with-slots (paragraphs parent) input
-    (if (pos doc)
-        (progn
-          (setf parent (pos doc))
-          (push (sections parent) input)))
-    (setf paragraphs (split-paragraphs
-              (collect-paragraphs (raw doc))))
-    (parse doc)))
+(defgeneric span-parse (input doc)
+  (:documentation "A special parser method for stuff within the body of a paragraph."))
+
+(defgeneric blk-parse (input doc)
+  (:documentation "A special parser for blocks within the document nodes."))
+
+;; TODO: make this into a more generic function
+(defmethod span-parse ((input bold) doc)
+  (read-char (raw doc))
+  (with-slots (text) input
+    (loop for c = (read-char (raw doc) nil :eof)
+          for n = (peek-char nil (raw doc) nil)
+          until (or (eq n #\*)
+                    (eq n #\_))
+          collect c into chars
+          finally (setf text (concatenate 'string chars))))
+  (dotimes (n 2) (read-char (raw doc) nil :eof))
+  input)
+
+(defmethod span-parse ((input italic) doc)
+  (with-slots (text) input
+    (loop for c = (read-char (raw doc) nil :eof)
+          for n = (peek-char nil (raw doc) nil)
+          until (or (eq n #\*)
+                    (eq n #\_))
+          collect c into chars
+          finally (setf text (concatenate 'string chars)))
+    (read-char (raw doc) nil :eof)
+    input))
+
+(defun link-text (obj s)
+  (with-slots (text) obj
+    (loop for c = (read-char s nil :eof)
+          until (eq c #\])
+          collect c into chars
+          finally (setf text (concatenate 'string chars)))))
+
+(defun link-title (obj s)
+  (with-slots (title) obj
+    (loop for c = (read-char s nil :eof)
+          until (eq c #\")
+          collect c into chars
+          finally (setf title (concatenate 'string chars)))))
+
+(defun link-src (obj s)
+  (with-slots (src) obj
+    (loop for c = (read-char s nil :eof)
+          until (eq c #\))
+          if (eq c #\")
+            do (link-title obj s)
+          else
+        collect c into chars
+          finally (setf src (concatenate 'string chars)))))
+
+(defun link-parse (input doc)
+  (link-text input (raw doc))
+  (read-char (raw doc) nil :eof)
+  (link-src input (raw doc))
+  input)
+
+(defmethod span-parse ((input link) doc)
+  (link-parse input doc))
+
+(defmethod span-parse ((input image) doc)
+  (read-char (raw doc) nil :eof)
+  (link-parse input doc))
+
+(defmethod span-parse ((input character) doc)
+  (let ((n (peek-char nil (raw doc) nil)))
+    (if (eq input #\\)
+        (read-char (raw doc) nil :eof))
+    (unless (eq input #\\)
+      (cond ((or (and (eq input #\*)
+                      (eq n #\*))
+                 (and (eq input #\_)
+                      (eq input #\_)))
+             (span-parse
+              (make-instance 'bold) doc))
+            ((or (eq input #\*)
+                 (eq input #\_))
+             (span-parse
+              (make-instance 'italic) doc))
+            ((and (eq input #\!)
+                  (eq n #\[))
+             (span-parse
+              (make-instance 'image) doc))
+            ((eq input #\[)
+             (span-parse
+              (make-instance 'link) doc))
+            (t "nothing to parse")))))
+
+(defmethod blk-parse ((input character) doc)
+  (let ((c (read-char (raw doc) nil :eof))
+        (n (peek-char nil (raw doc) nil :eof)))
+    (cond ((eq c #\>)
+           (blk-parse
+            (make-instance 'blkquote) doc))
+          ((eq c #\`)
+           (blk-parse
+            (make-instance 'code-blk) doc))
+          ((or (and (digit-char-p c)
+                    (eq n #\.))
+               (and (or (eq c #\*)
+                        (eq c #\-)
+                        (eq c #\+))
+                    (eq n #\space)))
+           (blk-parse
+            (make-instance 'blist) doc))
+          (t (blk-parse
+              (make-instance 'paragraph :parent (pos doc)) doc)))))
+
+(defmethod parse ((input paragraph) &key doc)
+  (with-slots (text parent) input
+    (push input (children parent))
+    (loop for c = (read-char (raw doc) nil :eof)
+          for n = (peek-char nil (raw doc) nil)
+          if (and (eq c #\newline) (eq n #\newline))
+            do (parse doc)
+          else
+            do (span-parse input doc))))
 
 (defmethod parse ((input heading) &key doc)
   (with-slots (title parent depth) input
