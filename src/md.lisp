@@ -16,15 +16,17 @@ At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praese
 (defclass body ()
   ((text
     :initarg :text
+    :initform nil
     :accessor text))
   (:documentation "Some unstructured text."))
 
-(defclass section (body)
+(defclass blk (body)
   ((parent
     :initarg :parent
     :initform nil
     :accessor parent))
-  (:documentation "The lowest point in the hierachy of a document."))
+  (:documentation "A text block. The lowest point in the hierachy of
+a document."))
 
 (defclass doc (body)
   ((nodes
@@ -33,7 +35,7 @@ At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praese
     :accessor nodes))
   (:documentation "The whole markdown document."))
 
-(defclass node (section)
+(defclass node (blk)
   ((children
     :initarg :children
     :initform nil
@@ -52,22 +54,58 @@ hierachy of a document."))
   (:documentation "A heading is a type of node that has a title
 associated with it and a depth."))
 
-(defclass paragraph (section) ()
-  (:documentation "A placeholder class for a type of section."))
+(defclass blkquote (blk) ())
 
-(defclass markup (body)
+(defclass blist (blk)
+  ((members
+    :initarg :members
+    :initform nil
+    :accessor members))
+  (:documentation "A bulleted list within the body of a document."))
+
+(defclass horizontal-rule (blk) ())
+
+(defclass code-blk (blk)
+  ((language
+    :initarg :language
+    :initform :fundamental
+    :accessor language)))
+
+(defclass paragraph (blk) ()
+  (:documentation "A placeholder class for a type of blk."))
+
+(defclass span (body)
   ((meta
     :initarg :meta
     :accessor meta
     :documentation "Describes how the text is being presented."))
-  (:documentation "A special bit of text that has more information associated
-with it than just the text itself, such as a presentation type or a link."))
+  (:documentation "Special text within the body of a blk element."))
 
-(defclass link (markup)
+(defclass link (span)
   ((src
     :initarg :src
-    :accessor src))
-  (:documentation "Points to some other text."))
+    :accessor src)
+   (title
+    :initarg :title
+    :initform nil
+    :accessor title)
+   (meta
+    :initform 'link)))
+
+(defclass image (link)
+  ((meta :initform 'image)))
+
+(defclass bold (span)
+  ((meta :initform 'bold)))
+
+(defclass italic (span)
+  ((meta :initform 'italic)))
+
+(defclass strikethrough (span)
+  ((meta :initform 'strikethrough)))
+
+(defclass code (span)
+  ((meta :initform 'code)))
 
 (defclass doc-raw (doc)
   ((pos
