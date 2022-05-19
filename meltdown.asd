@@ -5,5 +5,6 @@
   :components ((:module "src"
                 :components
                 ((:file "package")
-                 (:file "util")
+                 (:file "util"
+                  :depends-on ("md"))
                  (:file "md")))))
